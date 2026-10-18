@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <!-- MECHANIC 1: the viewport + theme-color make it *feel* like an app.
+       theme-color paints the phone's status bar to match your app. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#4f46e5">
+  <title>PWA Hello World</title>
+
+  <!-- MECHANIC 2: the manifest. This one <link> is what tells the browser
+       "this website is installable": its name, icons, colors, and how it
+       should launch (standalone = no browser chrome, like a native app). -->
+  <link rel="manifest" href="./manifest.webmanifest">
+
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; background: #1e1b4b; color: #fff; }
+    main { max-width: 560px; margin: 0 auto; padding: 2rem 1.25rem; }
+    .badge { display: inline-block; padding: .35rem .8rem; border-radius: 999px; font-weight: 600; }
+    .online { background: #16a34a; } .offline { background: #dc2626; }
+    .card { background: #312e81; border-radius: 12px; padding: 1rem 1.25rem; margin: 1rem 0; }
+    code { background: #1e1b4b; padding: .1rem .35rem; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>PWA Hello World</h1>
+
+    <p>Network: <span id="net" class="badge online">online</span></p>
+    <p>Launch mode: <span id="mode" class="badge">browser tab</span></p>
+
+    <div class="card">
+      <h2>The three mechanics</h2>
+      <ol>
+        <li><strong>Manifest</strong> (<code>manifest.webmanifest</code>) — the app's ID card:
+            name, icons, colors, "launch me standalone."</li>
+        <li><strong>Service worker</strong> (<code>sw.js</code>) — a script the browser
+            runs <em>in the background</em>, even with no page open. Ours intercepts
+            network requests and serves cached files, so the app works offline.</li>
+        <li><strong>Secure context</strong> — the browser only grants these powers over
+            HTTPS (or <code>localhost</code>, which counts as secure for development).</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Try this</h2>
+      <ol>
+        <li>Open DevTools → <strong>Application</strong> tab: see the Manifest, the
+            registered Service Worker, and Cache Storage.</li>
+        <li>DevTools → Network tab → set <strong>Offline</strong>, then reload.
+            The page still loads — that's the service worker serving the cache.</li>
+        <li>Chrome menu → <strong>"Install PWA Hello"</strong> (or the install icon
+            in the address bar). It launches without browser chrome, and the
+            "Launch mode" badge above flips to <em>standalone</em>.</li>
+      </ol>
+    </div>
+  </main>
+
+  <script>
+    // Register the service worker. The browser downloads sw.js ONCE, then runs
+    // it on its own thread, independent of any page. Registration returns a
+    // promise; the worker activates and starts intercepting fetches.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('[hello] service worker registered'))
+        .catch((err) => console.error('[hello] registration failed:', err));
+    }
+
+    // Live network badge: the browser fires 'online'/'offline' events.
+    const net = document.getElementById('net');
+    function paintNet() {
+      const up = navigator.onLine;
+      net.textContent = up ? 'online' : 'offline';
+      net.className = 'badge ' + (up ? 'online' : 'offline');
+    }
+    window.addEventListener('online', paintNet);
+    window.addEventListener('offline', paintNet);
+    paintNet();
+
+    // Detect launch mode: when installed and launched from the home screen,
+    // the display-mode media query is 'standalone' instead of 'browser'.
+    const mode = document.getElementById('mode');
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      mode.textContent = 'standalone (installed!)';
+    }
+  </script>
+</body>
+</html>
